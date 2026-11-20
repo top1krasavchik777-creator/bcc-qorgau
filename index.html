@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BCC Qorgau × BCC.KZ — Predictive Anti-Fraud & SOC</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #0b1315; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        
+        .topbar { background: #111f22; padding: 9px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f363b; flex-wrap: wrap; gap: 6px; }
+        .logo { font-size: 18px; font-weight: 800; color: #00a86b; display: flex; align-items: center; gap: 6px; }
+        .logo span { color: #f8fafc; }
+        .ml-tag { background: #007a4d; color: #fff; font-size: 10px; padding: 3px 7px; border-radius: 6px; }
+        
+        .presets { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+        .btn-preset { padding: 5px 8px; border-radius: 7px; border: none; font-weight: 600; cursor: pointer; font-size: 11px; transition: 0.2s; }
+        .btn-preset:hover { transform: translateY(-1px); filter: brightness(1.1); }
+        .btn-safe { background: #00a86b; color: #022c22; }
+        .btn-scam { background: #ef4444; color: #fff; }
+        .btn-rat { background: #8b5cf6; color: #fff; }
+        .btn-inv { background: #f59e0b; color: #0f172a; }
+        .btn-nbrk { background: #dc2626; color: #fff; border: 1px solid #fca5a5; }
+        .btn-biz { background: #0ea5e9; color: #0f172a; }
+        .btn-arch { background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; padding: 5px 8px; border-radius: 7px; cursor: pointer; font-size: 11px; font-weight: 700; }
+        .btn-fail { background: #1e293b; color: #fbbf24; border: 1px solid #d97706; padding: 5px 8px; border-radius: 7px; cursor: pointer; font-size: 11px; font-weight: 700; }
+        .btn-fail.active { background: #d97706; color: #0f172a; }
+        .btn-reset { background: #1f363b; color: #f8fafc; border: none; padding: 5px 8px; border-radius: 7px; cursor: pointer; font-size: 11px; }
+
+        .tg-input { background: #0b1315; border: 1px solid #334155; color: #f8fafc; padding: 5px 8px; border-radius: 7px; font-size: 11px; width: 150px; outline: none; }
+        .tg-input:focus { border-color: #38bdf8; }
+
+        .shadow-pill { display: flex; align-items: center; gap: 4px; background: #0b1315; border: 1px solid #334155; padding: 4px 8px; border-radius: 7px; font-size: 11px; font-weight: 700; color: #94a3b8; cursor: pointer; }
+        .shadow-pill.active { border-color: #f59e0b; color: #fbbf24; background: rgba(245, 158, 11, 0.12); }
+
+        .lang-switch { display: flex; background: #0b1315; border-radius: 7px; padding: 2px; border: 1px solid #1f363b; }
+        .lang-btn { padding: 3px 7px; border: none; background: transparent; color: #94a3b8; font-weight: 700; font-size: 10.5px; border-radius: 5px; cursor: pointer; }
+        .lang-btn.active { background: #00a86b; color: #ffffff; }
+
+        .soc-toast {
+            position: fixed;
+            top: 58px;
+            right: 22px;
+            background: #064e3b;
+            border: 1.5px solid #34d399;
+            color: #ecfdf5;
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+            z-index: 999;
+            display: none;
+            animation: toastIn 0.3s ease;
+        }
+        @keyframes toastIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Модальное окно Архитектуры БЦК */
+        .arch-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.84);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .arch-card {
+            background: #111f22;
+            border: 1.5px solid #00a86b;
+            border-radius: 20px;
+            max-width: 850px;
+            width: 100%;
+            padding: 22px 26px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.75);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .arch-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .arch-node { background: #0b1315; border: 1px solid #1f363b; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+        .arch-step { font-size: 10px; font-weight: 800; color: #00a86b; text-transform: uppercase; }
+        .arch-name { font-size: 13px; font-weight: 800; color: #f8fafc; }
+        .arch-detail { font-size: 11px; color: #94a3b8; line-height: 1.35; }
+        .arch-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #0b1315; padding: 12px; border-radius: 12px; border: 1px solid #1f363b; font-size: 11.5px; }
+
+        .container { display: flex; flex: 1; padding: 12px 18px; gap: 18px; max-width: 1480px; margin: 0 auto; width: 100%; }
+        
+        /* Смартфон bcc.kz */
+        .phone-wrapper { flex: 0 0 374px; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+        .phone-env-bar { width: 364px; display: flex; justify-content: space-between; gap: 6px; }
+        .env-btn { flex: 1; background: #111f22; border: 1px solid #1f363b; color: #e2e8f0; padding: 6px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .env-btn:hover { border-color: #ef4444; color: #fca5a5; }
+
+        .phone { width: 364px; height: 668px; background: #ffffff; color: #0f172a; border-radius: 36px; padding: 14px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.65); border: 7px solid #1f363b; display: flex; flex-direction: column; gap: 6px; transition: all 0.35s ease; position: relative; overflow: hidden; }
+        .phone.danger-glow { border-color: #ef4444; box-shadow: 0 0 38px rgba(239, 68, 68, 0.6); }
+        .phone.safe-glow { border-color: #00a86b; box-shadow: 0 0 28px rgba(0, 168, 107, 0.45); }
+        .phone.ringing { animation: phoneVibrate 0.25s infinite; border-color: #ef4444; }
+        @keyframes phoneVibrate {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-2px, 1px) rotate(-0.5deg); }
+            50% { transform: translate(2px, -1px) rotate(0.5deg); }
+            75% { transform: translate(-1px, -1px) rotate(-0.3deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        /* Экран входящего вызова CallKit */
+        .incoming-call-card {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(15, 23, 42, 0.96);
+            color: #fff;
+            border-radius: 20px;
+            padding: 12px 14px;
+            z-index: 25;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.55);
+            border: 1px solid #334155;
+            flex-direction: column;
+            gap: 10px;
+            animation: slideDown 0.3s ease;
+        }
+        .inc-top { display: flex; justify-content: space-between; align-items: center; }
+        .inc-actions { display: flex; gap: 8px; }
+        .inc-btn { flex: 1; padding: 8px; border-radius: 12px; border: none; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .inc-accept { background: #10b981; color: #022c22; }
+        .inc-decline { background: #ef4444; color: #fff; }
+
+        .call-banner { display: none; background: #111827; color: #fff; padding: 6px 12px; border-radius: 14px; font-size: 10.5px; align-items: center; justify-content: space-between; box-shadow: 0 6px 16px rgba(0,0,0,0.25); animation: slideDown 0.3s ease; z-index: 5; }
+        @keyframes slideDown { from { transform: translateY(-15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .pulse-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; display: inline-block; margin-right: 6px; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+        .phone-header { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+        .bcc-brand { color: #007a4d; letter-spacing: -0.3px; display: flex; align-items: center; gap: 5px; }
+        .bcc-dot { width: 9px; height: 9px; background: #00a86b; border-radius: 3px; display: inline-block; }
+
+        .balance-card { background: linear-gradient(135deg, #007a4d, #00a86b); color: white; padding: 9px 13px; border-radius: 14px; }
+        .balance-card.biz-mode { background: linear-gradient(135deg, #0f172a, #0369a1); }
+        .card-top { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; opacity: 0.9; }
+        .balance-val { font-size: 20px; font-weight: 800; margin-top: 1px; transition: 0.3s; }
+
+        .bcc-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 9px; }
+        .bcc-tab { border: none; background: transparent; padding: 5px 4px; font-size: 10.5px; font-weight: 700; color: #64748b; border-radius: 7px; cursor: pointer; transition: 0.2s; }
+        .bcc-tab.active { background: #ffffff; color: #007a4d; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        
+        .form-group { display: flex; flex-direction: column; gap: 2px; }
+        .form-group label { font-size: 10px; font-weight: 700; color: #475569; display: flex; justify-content: space-between; }
+        .form-group input, .form-group select { padding: 6px 9px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 12px; outline: none; }
+        .form-group input:focus { border-color: #00a86b; }
+        .bank-pill { font-size: 9.5px; font-weight: 700; color: #007a4d; background: #dcfce7; padding: 1px 6px; border-radius: 5px; }
+
+        .sim-box { background: #f1f5f9; padding: 6px 9px; border-radius: 11px; display: flex; flex-direction: column; gap: 3.5px; }
+        .sim-title { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; display: flex; justify-content: space-between; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 500; }
+        .toggle-row input[type="checkbox"] { width: 13.5px; height: 13.5px; accent-color: #ef4444; cursor: pointer; }
+
+        .btn-send { background: #008a57; color: white; border: none; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: auto; transition: 0.2s; }
+        .btn-send:hover { background: #006b43; }
+
+        /* Всплывающее модальное окно поверх экрана bcc.kz */
+        .bcc-modal-backdrop {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(4px);
+            z-index: 20;
+            flex-direction: column;
+            justify-content: flex-end;
+            animation: fadeIn 0.25s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .bcc-modal-sheet {
+            background: #ffffff;
+            color: #0f172a;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 16px 16px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.35);
+            animation: sheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 94%;
+            overflow-y: auto;
+        }
+        @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .modal-handle { width: 38px; height: 4px; background: #cbd5e1; border-radius: 99px; margin: -4px auto 2px; }
+        .modal-icon-circle { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto; }
+        .icon-APPROVED { background: #dcfce7; color: #008a57; }
+        .icon-FRICTION, .icon-COOLDOWN { background: #fef3c7; color: #d97706; }
+        .icon-BLOCKED { background: #fee2e2; color: #dc2626; animation: pulseRing 1.5s infinite; }
+        @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); } 70% { box-shadow: 0 0 0 12px rgba(220,38,38,0); } 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); } }
+
+        .modal-title { font-size: 15px; font-weight: 800; text-align: center; line-height: 1.25; }
+        .modal-desc { font-size: 11.5px; color: #475569; text-align: center; line-height: 1.35; }
+
+        .modal-tx-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px 11px; font-size: 11px; display: flex; flex-direction: column; gap: 3px; }
+        .modal-tx-row { display: flex; justify-content: space-between; }
+        .modal-tx-row span:first-child { color: #64748b; }
+        .modal-tx-row span:last-child { font-weight: 700; color: #0f172a; }
+
+        .modal-timer-box { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 7px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 700; }
+        .modal-timer-box.danger { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+
+        .call-guard-warn { display: none; background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 7px 10px; border-radius: 9px; font-size: 11px; font-weight: 700; text-align: center; }
+
+        .friction-check-box { background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 10px; padding: 8px; display: flex; gap: 8px; align-items: flex-start; font-size: 11px; font-weight: 600; color: #78350f; cursor: pointer; }
+        .friction-check-box input { margin-top: 2px; width: 15px; height: 15px; accent-color: #008a57; }
+
+        .camera-box { display: none; position: relative; border-radius: 12px; overflow: hidden; background: #0f172a; height: 125px; border: 2px solid #00a86b; }
+        .camera-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .face-frame { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 76px; height: 92px; border: 2px dashed #34d399; border-radius: 50%; box-shadow: 0 0 0 999px rgba(15, 23, 42, 0.45); pointer-events: none; }
+        .camera-status { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 10px; font-weight: 700; color: #6ee7b7; background: rgba(15,23,42,0.85); padding: 3px; }
+
+        .modal-btn { width: 100%; padding: 9.5px; border-radius: 11px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .mbtn-green { background: #008a57; color: #fff; }
+        .mbtn-green:disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; }
+        .mbtn-dark { background: #0f172a; color: #34d399; border: 1px solid #00a86b; }
+        .mbtn-red { background: #dc2626; color: #fff; }
+        .mbtn-ghost { background: #f1f5f9; color: #334155; }
+
+        /* Дашборд */
+        .dashboard { flex: 1; display: flex; flex-direction: column; gap: 9px; }
+        
+        .roi-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .roi-card { background: linear-gradient(135deg, #111f22, #152b2f); padding: 8px 13px; border-radius: 12px; border: 1px solid #1f363b; display: flex; justify-content: space-between; align-items: center; }
+        .roi-lbl { font-size: 9.5px; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+        .roi-num { font-size: 16.5px; font-weight: 900; color: #34d399; }
+
+        .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .metric-card { background: #111f22; padding: 8px 12px; border-radius: 12px; border: 1px solid #1f363b; }
+        .metric-title { font-size: 9.5px; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+        .metric-value { font-size: 16px; font-weight: 800; margin-top: 2px; color: #34d399; }
+
+        .visuals-row { display: grid; grid-template-columns: 1.35fr 1fr; gap: 10px; }
+        .chart-card { background: #111f22; padding: 9px 13px; border-radius: 12px; border: 1px solid #1f363b; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .chart-title { font-size: 10.5px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; }
+        canvas { width: 100%; height: 76px; background: #0b1315; border-radius: 8px; display: block; }
+
+        .analysis-panel { background: #111f22; padding: 12px 14px; border-radius: 12px; border: 1px solid #1f363b; display: flex; flex-direction: column; gap: 7px; }
+        .score-header { display: flex; justify-content: space-between; align-items: center; }
+        .latency-pill { background: #064e3b; color: #6ee7b7; font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-family: monospace; }
+        .pii-pill { background: #1e293b; color: #38bdf8; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 6px; }
+        .score-badge { font-size: 21px; font-weight: 900; padding: 3px 11px; border-radius: 10px; background: #0b1315; }
+        .progress-bg { width: 100%; height: 8px; background: #0b1315; border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: #00a86b; transition: all 0.4s ease; }
+
+        .reasons-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+        .reasons-list li { background: #0b1315; padding: 6px 10px; border-radius: 7px; font-size: 11.5px; border-left: 4px solid #00a86b; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .shap-bar-wrap { width: 64px; height: 6px; background: #1e293b; border-radius: 99px; overflow: hidden; flex-shrink: 0; }
+        .shap-bar-fill { height: 100%; border-radius: 99px; }
+
+        .soc-panel { background: #111f22; padding: 10px 14px; border-radius: 12px; border: 1px solid #1f363b; flex: 1; overflow-y: auto; }
+        .soc-title { font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+        th { text-align: left; color: #64748b; padding: 4px 6px; border-bottom: 1px solid #1f363b; }
+        td { padding: 5px 6px; border-bottom: 1px solid #0b1315; }
+        .badge-st { padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10px; }
+        .st-APPROVED { background: #064e3b; color: #6ee7b7; }
+        .st-BLOCKED { background: #7f1d1d; color: #fca5a5; }
+        .st-COOLDOWN, .st-FRICTION { background: #78350f; color: #fde68a; }
+    </style>
+</head>
+<body>
+
+<div class="soc-toast" id="socToast">✅ Telegram Webhook: Доверенное лицо подтвердило операцию!</div>
+
+<!-- Модальное окно Архитектуры БЦК -->
+<div class="arch-overlay" id="archModal" onclick="if(event.target===this) this.style.display='none'">
+    <div class="arch-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h2 style="font-size:17.5px; color:#34d399;">🔌 Архитектура BCC Qorgau SDK для Банка ЦентрКредит (iOS / Android)</h2>
+                <p style="font-size:12px; color:#94a3b8; margin-top:2px;">100% совместимость с Apple App Store, Google Play и Законом РК «О персональных данных» (№94-V)</p>
+            </div>
+            <button class="btn-reset" onclick="document.getElementById('archModal').style.display='none'">✕ Закрыть</button>
+        </div>
+
+        <div class="arch-flow">
+            <div class="arch-node">
+                <span class="arch-step">1. Legal Edge SDK</span>
+                <span class="arch-name">bcc.kz / BCC Business</span>
+                <span class="arch-detail">Использует только разрешенные API: <b>CXCallObserver</b> (факт активного вызова без номера) и <b>UIScreen.isCaptured</b> (запись/трансляция экрана AnyDesk).</span>
+            </div>
+            <div class="arch-node">
+                <span class="arch-step">2. Zero-PII Hash</span>
+                <span class="arch-name">Локальная векторизация</span>
+                <span class="arch-detail">Сырые нажатия и кадры FaceID не покидают смартфон. В Kafka БЦК уходит только обезличенный массив признаков (&lt; 2 КБ).</span>
+            </div>
+            <div class="arch-node">
+                <span class="arch-step">3. Hybrid AI Core</span>
+                <span class="arch-name">Isolation Forest + GNN</span>
+                <span class="arch-detail">Контекстный скоринг (Copy-Paste опасен только в связке со звонком) + сверка со стоп-базой Антифрод-центра НБРК.</span>
+            </div>
+            <div class="arch-node">
+                <span class="arch-step">4. Fail-Open & SOC</span>
+                <span class="arch-name">Линии 505 / 605 + TG</span>
+                <span class="arch-detail">При таймауте сервера &gt; 50 мс срабатывает On-Device резерв. Двухстороннее подтверждение доверенным лицом в Telegram/SMS.</span>
+            </div>
+        </div>
+
+        <div class="arch-specs">
+            <div><strong style="color:#34d399;">⚡ SLA Инференса:</strong> &lt; 20 мс (Fail-Open Edge Fallback)</div>
+            <div><strong style="color:#38bdf8;">🍏 App Store / Google Play:</strong> Без доступа к контактам и звонкам</div>
+            <div><strong style="color:#fbbf24;">🧪 Безопасный старт:</strong> 14 дней в режиме Shadow Mode</div>
+        </div>
+    </div>
+</div>
+
+<div class="topbar">
+    <div class="logo">BCC <span>Qorgau</span> <span style="font-size:13px; color:#94a3b8;">× bcc.kz</span> <span class="ml-tag" id="t_tag">BCC Anti-Fraud 505/605 • СМП + НБРК</span></div>
+    <div class="presets">
+        <button class="btn-preset btn-safe" id="t_p1" onclick="applyPreset('safe')">1. Норма</button>
+        <button class="btn-preset btn-scam" id="t_p2" onclick="applyPreset('scam')">2. Депозит Рахмет → СМП</button>
+        <button class="btn-preset btn-rat" id="t_p3" onclick="applyPreset('rat')">3. Screen Share / Дроп</button>
+        <button class="btn-preset btn-inv" id="t_p4" onclick="applyPreset('invoice')">4. Фейк-счет QR</button>
+        <button class="btn-preset btn-nbrk" id="t_p5" onclick="applyPreset('nbrk')">5. Стоп-база НБРК</button>
+        <button class="btn-preset btn-biz" id="t_p6" onclick="applyPreset('biz')">6. BCC Business (605)</button>
+        <button class="btn-arch" onclick="document.getElementById('archModal').style.display='flex'">🔌 SDK & Архитектура</button>
+        <button class="btn-fail" id="failoverBtn" onclick="toggleFailoverMode()" title="Имитация падения ML-сервера: проверка резерва на устройстве">⚡ Тест Fail-Open</button>
+        <button class="btn-reset" id="t_reset" onclick="resetTelemetry()">Сброс</button>
+        
+        <input type="text" class="tg-input" id="tgChatIdInput" placeholder="TG ID (или /start боту)" title="Нажмите /start в Telegram-боте, чтобы получить свой ID, или оставьте пустым — бот пришлет всем активным пользователям">
+
+        <label class="shadow-pill" id="shadowPill" title="Теневой пилот БЦК: анализирует трафик без блокировки клиентов">
+            <input type="checkbox" id="shadowModeToggle" style="accent-color:#f59e0b;" onchange="toggleShadowMode()">
+            <span id="t_shadow">Shadow Mode</span>
+        </label>
+
+        <div class="lang-switch">
+            <button class="lang-btn" id="btn_kk" onclick="setLang('kk')">ҚАЗ</button>
+            <button class="lang-btn active" id="btn_ru" onclick="setLang('ru')">РУС</button>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="phone-wrapper">
+        <div class="phone-env-bar">
+            <button class="env-btn" onclick="simulateIncomingCall()">📞 Симулировать входящий звонок (CallKit)</button>
+        </div>
+
+        <div class="phone" id="phoneFrame">
+            <!-- Экран входящего вызова CallKit -->
+            <div class="incoming-call-card" id="incomingCallCard">
+                <div class="inc-top">
+                    <div>
+                        <div style="font-size:10px; color:#94a3b8; font-weight:700;">iOS CallKit • CXCallObserver</div>
+                        <div style="font-size:13px; font-weight:800; color:#f8fafc;">Входящий голосовой вызов</div>
+                    </div>
+                    <span class="pulse-dot"></span>
+                </div>
+                <div class="inc-actions">
+                    <button class="inc-btn inc-accept" onclick="acceptSimulatedCall()">📞 Ответить</button>
+                    <button class="inc-btn inc-decline" onclick="declineSimulatedCall()">✕ Сбросить</button>
+                </div>
+            </div>
+
+            <div class="call-banner" id="callBanner">
+                <div><span class="pulse-dot"></span><strong id="t_caller">Активный звонок (CallKit: isOnCall=True)</strong></div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span id="callTimer" style="font-family:monospace; color:#fca5a5;">04:12</span>
+                    <button onclick="endActiveCall()" style="background:#ef4444; color:#fff; border:none; border-radius:6px; padding:2px 6px; font-size:9.5px; font-weight:700; cursor:pointer;">Завершить</button>
+                </div>
+            </div>
+
+            <div class="phone-header">
+                <span class="bcc-brand" id="bccAppTitle"><span class="bcc-dot"></span> bcc.kz</span>
+                <span style="font-size:10.5px; color:#008a57;" id="sdkStatusBadge">● BCC Qorgau SDK (505)</span>
+            </div>
+
+            <div class="balance-card" id="bccCardBox">
+                <div class="card-top">
+                    <span id="t_bal_lbl">#картакарта • Доступно</span>
+                    <span>VISA •• 4409</span>
+                </div>
+                <div class="balance-val" id="balanceDisplay">600 000 ₸</div>
+            </div>
+
+            <div class="bcc-tabs">
+                <button class="bcc-tab active" id="tab_smp" onclick="selectBccTab('smp')">По номеру (СМП)</button>
+                <button class="bcc-tab" id="tab_card" onclick="selectBccTab('card')">На карту</button>
+                <button class="bcc-tab" id="tab_biz" onclick="selectBccTab('biz')">BCC Business</button>
+            </div>
+
+            <div class="form-group">
+                <label id="t_rec_lbl">Сценарий / Категория получателя</label>
+                <select id="recipientType" onchange="onRecipientChange()">
+                    <option value="known" id="t_opt1">Мама • Внутри БЦК (доверенный контакт)</option>
+                    <option value="new" id="t_opt2">Перевод по номеру телефона (СМП / IPS)</option>
+                    <option value="fake_invoice" id="t_opt3">Счет BCC Pay / QR: «Налог / Доставка» (ИП 3 дня)</option>
+                    <option value="nbrk_blacklist" id="t_opt4">Дроп-счет из стоп-базы НБРК (+7 700 666-00-00)</option>
+                    <option value="bcc_business" id="t_opt5">ТОО «Alfa-Stroy» • Платежное поручение (1.45M ₸)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <span id="t_phone_lbl">Номер / Счет получателя</span>
+                    <span class="bank-pill" id="detectedBankBadge">Банк ЦентрКредит</span>
+                </label>
+                <input type="text" id="phoneInput" value="+7 701 555-33-11 (Мама)" oninput="onPhoneInput()">
+            </div>
+
+            <div class="form-group">
+                <label id="t_amt_lbl">Сумма (₸) — только цифры 0–9 или Ctrl+V</label>
+                <input type="text" inputmode="numeric" id="amountInput" placeholder="450000" onkeydown="trackKey(event)" onpaste="trackPaste()">
+            </div>
+
+            <div class="sim-box">
+                <div class="sim-title">
+                    <span id="t_sim_title">Легальные сигналы ОС и БЦК (App Store / Google Play OK)</span>
+                </div>
+                <label class="toggle-row">
+                    <span id="t_s1">Путь: Депозит «Рахмет» → #картакарта → СМП</span>
+                    <input type="checkbox" id="clickstreamToggle">
+                </label>
+                <label class="toggle-row">
+                    <span id="t_s2">Активный звонок (CallKit / Telecom State)</span>
+                    <input type="checkbox" id="callToggle" onchange="toggleCallBanner(); refreshGraph(); updateCallGuardUI();">
+                </label>
+                <label class="toggle-row">
+                    <span id="t_s3">Онлайн-кредит БЦК оформлен < 15 мин назад</span>
+                    <input type="checkbox" id="loanToggle">
+                </label>
+                <label class="toggle-row">
+                    <span id="t_s4">Трансляция экрана (UIScreen.isCaptured / RAT)</span>
+                    <input type="checkbox" id="ratToggle" onchange="refreshGraph()">
+                </label>
+                <label class="toggle-row">
+                    <span id="t_s5">Транзитный дроп / Смена SIM (IMSI)</span>
+                    <input type="checkbox" id="muleToggle" onchange="refreshGraph()">
+                </label>
+                <label class="toggle-row">
+                    <span id="t_s6">Personal Baseline (самообученная норма)</span>
+                    <input type="checkbox" id="baselineToggle" style="accent-color:#00a86b;">
+                </label>
+            </div>
+
+            <button class="btn-send" id="submitBtn" onclick="submitTransfer()">Перевести по СМП (bcc.kz)</button>
+
+            <!-- ВСПЛЫВАЮЩЕЕ МОДАЛЬНОЕ ОКНО ПОВЕРХ ИНТЕРФЕЙСА BCC.KZ -->
+            <div class="bcc-modal-backdrop" id="bccModalBackdrop">
+                <div class="bcc-modal-sheet">
+                    <div class="modal-handle"></div>
+                    <div class="modal-icon-circle icon-BLOCKED" id="modalIcon">🛡️</div>
+                    <div class="modal-title" id="modalTitle">Перехват операции</div>
+                    <div class="modal-desc" id="modalDesc">Описание проверки безопасности</div>
+
+                    <div class="modal-tx-card">
+                        <div class="modal-tx-row">
+                            <span id="m_lbl_rec">Получатель:</span>
+                            <span id="modalRecVal">—</span>
+                        </div>
+                        <div class="modal-tx-row">
+                            <span id="m_lbl_amt">Сумма перевода:</span>
+                            <span id="modalAmtVal">0 ₸</span>
+                        </div>
+                        <div class="modal-tx-row">
+                            <span id="m_lbl_risk">Индекс риска AI:</span>
+                            <span id="modalRiskVal">0 / 100</span>
+                        </div>
+                    </div>
+
+                    <div class="call-guard-warn" id="callGuardWarn">
+                        📵 Завершите активный звонок, чтобы разблокировать подтверждение!
+                    </div>
+
+                    <div class="modal-timer-box" id="modalTimerBox" style="display:none;">
+                        <span id="cdTimerSpan">До авто-отмены: 14:59</span><br>
+                        <span style="font-size:10px; font-weight:500;" id="m_tg_hint">Запрос отправлен доверенному лицу в Telegram / SMS (1 или 2)</span>
+                    </div>
+
+                    <label class="friction-check-box" id="frictionCheckLabel" style="display:none;">
+                        <input type="checkbox" id="frictionCheckbox" onchange="updateCallGuardUI()">
+                        <span id="m_fric_text">Я подтверждаю, что мне НЕ звонят из банка, полиции или НБРК, и я совершаю перевод добровольно.</span>
+                    </label>
+                    <button class="modal-btn mbtn-green" id="modalConfirmFrictionBtn" disabled style="display:none;" onclick="confirmFriction()">Подтвердить и перевести</button>
+
+                    <div class="camera-box" id="cameraBox">
+                        <video id="webcamVideo" autoplay playsinline muted></video>
+                        <div class="face-frame"></div>
+                        <div class="camera-status" id="camStatusText">BCC FaceID: Проверка отсутствия давления...</div>
+                    </div>
+
+                    <button class="modal-btn mbtn-dark" id="modalVideoBtn" style="display:none;" onclick="triggerVideoVerify()">🎥 Нет близких? BCC FaceID Видео-проверка</button>
+                    <button class="modal-btn mbtn-red" id="modalCall505Btn" style="display:none;" onclick="alert('Соединение с офицером безопасности БЦК (линия 505 / 605)...')">📞 Позвонить в СБ БЦК (505 / 605)</button>
+                    <button class="modal-btn mbtn-ghost" id="modalCloseBtn" onclick="closeBccModal()">Вернуться в bcc.kz</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="roi-strip">
+            <div class="roi-card">
+                <div>
+                    <div class="roi-lbl" id="t_roi1">Спасено средств клиентов БЦК</div>
+                    <div class="roi-num" id="savedMoneyVal">0 ₸</div>
+                </div>
+                <span style="font-size:20px;">🛡️</span>
+            </div>
+            <div class="roi-card">
+                <div>
+                    <div class="roi-lbl" id="t_roi2">Снижение False Positives</div>
+                    <div class="roi-num">-82%</div>
+                </div>
+                <span style="font-size:20px;">⚡</span>
+            </div>
+            <div class="roi-card">
+                <div>
+                    <div class="roi-lbl" id="t_roi3">Контур обработки</div>
+                    <div class="roi-num" id="sdkModeLabel" style="font-size:13.5px; color:#34d399;">HYBRID CLOUD + EDGE</div>
+                </div>
+                <span style="font-size:20px;">🏦</span>
+            </div>
+        </div>
+
+        <div class="dash-grid">
+            <div class="metric-card">
+                <div class="metric-title" id="t_m1">Маршрут в bcc.kz</div>
+                <div class="metric-value" id="uiPath" style="color:#34d399;">Обычный</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title" id="t_m2">Макс. пауза ввода</div>
+                <div class="metric-value" id="uiPause">0.0 сек</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title" id="t_m3">Экран / Касание</div>
+                <div class="metric-value" id="uiTouch" style="color:#34d399;">Норма (OK)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title" id="t_m4">Буфер (Контекстный)</div>
+                <div class="metric-value" id="uiPaste" style="color:#34d399;">Нет</div>
+            </div>
+        </div>
+
+        <div class="visuals-row">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-title" id="t_chart_title">Кардиограмма ритма цифр (0–9)</span>
+                    <span style="font-size: 10px; color: #94a3b8;" id="t_chart_sub">Зеленый: норма | Желтый: Copy-Paste без звонка | Красный: диктовка</span>
+                </div>
+                <canvas id="pulseCanvas" width="460" height="76"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-title" id="t_graph_title">Граф связей (GNN + СМП Межбанк)</span>
+                    <span style="font-size: 10px; color: #34d399;" id="t_graph_sub">Анализ кластера получателя</span>
+                </div>
+                <canvas id="graphCanvas" width="340" height="76"></canvas>
+            </div>
+        </div>
+
+        <div class="analysis-panel">
+            <div class="score-header">
+                <div>
+                    <h2 style="font-size: 14.5px;" id="t_ai_title">Explainable AI (SHAP): Предиктивный скоринг БЦК + НБРК</h2>
+                    <p style="color: #94a3b8; font-size: 11px; margin-top: 2px;" id="verdictSubtitle">Ожидание транзакции клиента bcc.kz...</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span class="pii-pill">Zero-PII Edge Hash</span>
+                    <span class="latency-pill" id="latencyBadge">⚡ Latency: 12 ms</span>
+                    <div class="score-badge" id="riskScoreBadge">0 / 100</div>
+                </div>
+            </div>
+
+            <div class="progress-bg">
+                <div class="progress-fill" id="riskProgress"></div>
+            </div>
+
+            <ul class="reasons-list" id="reasonsList">
+                <li id="t_init_reason"><span>Нажмите /start в Telegram-боте для получения алертов, затем запустите любой из 6 сценариев или введите сумму вручную.</span></li>
+            </ul>
+        </div>
+
+        <div class="soc-panel">
+            <div class="soc-title">
+                <span id="t_soc_title">Журнал инцидентов службы безопасности БЦК (Live SOC 505/605)</span>
+                <span style="color:#34d399;" id="activeTgBadge">BCC Qorgau × NBRK IPS Active</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th id="t_th1">Время</th>
+                        <th>ID</th>
+                        <th id="t_th2">Получатель / Канал</th>
+                        <th id="t_th3">Сумма</th>
+                        <th id="t_th4">Риск</th>
+                        <th id="t_th5">Главный триггер</th>
+                        <th id="t_th6">Вердикт</th>
+                    </tr>
+                </thead>
+                <tbody id="socLogBody">
+                    <tr><td colspan="7" style="color:#64748b; text-align:center;" id="t_no_logs">Транзакций пока нет</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentLang = 'ru';
+    const i18n = {
+        ru: {
+            t_tag: "BCC Anti-Fraud 505/605 • СМП + НБРК",
+            t_p1: "1. Норма", t_p2: "2. Депозит Рахмет → СМП", t_p3: "3. Screen Share / Дроп",
+            t_p4: "4. Фейк-счет QR", t_p5: "5. Стоп-база НБРК", t_p6: "6. BCC Business (605)", t_reset: "Сброс",
+            t_caller: "Активный звонок (CallKit: isOnCall=True)",
+            t_bal_lbl: "#картакарта • Доступно", t_rec_lbl: "Сценарий / Категория получателя",
+            t_phone_lbl: "Номер / Счет получателя",
+            tab_smp: "По номеру (СМП)", tab_card: "На карту", tab_biz: "BCC Business",
+            t_opt1: "Мама • Внутри БЦК (доверенный контакт)", t_opt2: "Перевод по номеру телефона (СМП / IPS)",
+            t_opt3: "Счет BCC Pay / QR: «Налог / Доставка» (ИП 3 дня)", t_opt4: "Дроп-счет из стоп-базы НБРК (+7 700 666-00-00)",
+            t_opt5: "ТОО «Alfa-Stroy» • Платежное поручение (1.45M ₸)",
+            t_amt_lbl: "Сумма (₸) — только цифры 0–9 или Ctrl+V",
+            t_sim_title: "Легальные сигналы ОС и БЦК (App Store / Google Play OK)",
+            t_s1: "Путь: Депозит «Рахмет» → #картакарта → СМП", t_s2: "Активный звонок (CallKit / Telecom State)",
+            t_s3: "Онлайн-кредит БЦК оформлен < 15 мин назад", t_s4: "Трансляция экрана (UIScreen.isCaptured / RAT)",
+            t_s5: "Транзитный дроп / Смена SIM (IMSI)", t_s6: "Personal Baseline (самообученная норма)",
+            submitBtn: "Перевести по СМП (bcc.kz)", submitInv: "Оплатить счет (185 000 ₸)", submitBiz: "Подписать платеж (1 450 000 ₸)",
+            t_roi1: "Спасено средств клиентов БЦК", t_roi2: "Снижение False Positives", t_roi3: "Контур обработки",
+            t_m1: "Маршрут в bcc.kz", t_m2: "Макс. пауза ввода", t_m3: "Экран / Касание", t_m4: "Буфер (Контекстный)",
+            pathNorm: "Обычный", pathAnom: "АНОМАЛЬНЫЙ!", touchOk: "Норма (OK)", touchRat: "ЗАПИСЬ ЭКРАНА!",
+            pasteNo: "Нет", pasteSafe: "Вставка (Без звонка)", pasteDanger: "ВСТАВКА + ЗВОНОК!",
+            t_chart_title: "Кардиограмма ритма цифр (0–9)", t_chart_sub: "Зеленый: норма | Желтый: Copy-Paste без звонка | Красный: диктовка",
+            t_graph_title: "Граф связей (GNN + СМП Межбанк)", t_graph_sub: "Анализ кластера получателя",
+            t_ai_title: "Explainable AI (SHAP): Предиктивный скоринг БЦК + НБРК",
+            waitSub: "Ожидание транзакции клиента bcc.kz...", statusSub: "Статус операции: ",
+            t_soc_title: "Журнал инцидентов службы безопасности БЦК (Live SOC 505/605)",
+            t_th1: "Время", t_th2: "Получатель / Канал", t_th3: "Сумма", t_th4: "Риск", t_th5: "Главный триггер", t_th6: "Вердикт",
+            t_no_logs: "Транзакций пока нет",
+            fricTitle: "Подтверждено клиентом БЦК ✅", fricDesc: "Звонок завершен, психологический транс прерван, операция проведена.",
+            timerPrefix: "До авто-отмены: ",
+            m_lbl_rec: "Получатель:", m_lbl_amt: "Сумма перевода:", m_lbl_risk: "Индекс риска AI:",
+            m_tg_hint: "Запрос отправлен доверенному лицу в Telegram / SMS (1 или 2)",
+            m_fric_text: "Я подтверждаю, что мне НЕ звонят из банка, полиции или НБРК, и я совершаю перевод добровольно.",
+            modalConfirmFrictionBtn: "Подтвердить и перевести",
+            modalVideoBtn: "🎥 Нет близких? BCC FaceID Видео-проверка",
+            modalCall505Btn: "📞 Позвонить в СБ БЦК (505 / 605)",
+            modalCloseBtn: "Вернуться в bcc.kz"
+        },
+        kk: {
+            t_tag: "BCC Anti-Fraud 505/605 • СМП + ҚР ҰБ",
+            t_p1: "1. Қалыпты", t_p2: "2. Рахмет депозиті → СМП", t_p3: "3. Screen Share / Дроп",
+            t_p4: "4. Жалған шот QR", t_p5: "5. ҚР ҰБ стоп-базасы", t_p6: "6. BCC Business (605)", t_reset: "Қалпына келтіру",
+            t_caller: "Белсенді қоңырау (CallKit: isOnCall=True)",
+            t_bal_lbl: "#картакарта • Қолжетімді", t_rec_lbl: "Сценарий / Алушы санаты",
+            t_phone_lbl: "Алушының нөмірі / шоты",
+            tab_smp: "Нөмір бойынша (СМП)", tab_card: "Картаға", tab_biz: "BCC Business",
+            t_opt1: "Анашым • БЦК ішінде (сенімді контакт)", t_opt2: "Телефон нөмірі бойынша аударым (СМП / IPS)",
+            t_opt3: "BCC Pay / QR шоты: «Салық / Жеткізу» (ЖК 3 күн)", t_opt4: "ҚР ҰБ дроп-базасындағы шот (+7 700 666-00-00)",
+            t_opt5: "«Alfa-Stroy» ЖШС • Төлем тапсырмасы (1.45M ₸)",
+            t_amt_lbl: "Сома (₸) — тек 0–9 цифрлары немесе Ctrl+V",
+            t_sim_title: "ОС және БЦК заңды сигналдары (App Store / Google Play OK)",
+            t_s1: "Жол: «Рахмет» депозиті → #картакарта → СМП", t_s2: "Белсенді қоңырау (CallKit / Telecom State)",
+            t_s3: "БЦК онлайн-несиесі < 15 мин бұрын рәсімделген", t_s4: "Экранды трансляциялау (UIScreen.isCaptured / RAT)",
+            t_s5: "Транзиттік дроп / SIM ауыстыру (IMSI)", t_s6: "Personal Baseline (өзін-өзі оқыту нормасы)",
+            submitBtn: "СМП арқылы аудару (bcc.kz)", submitInv: "Шотты төлеу (185 000 ₸)", submitBiz: "Төлемге қол қою (1 450 000 ₸)",
+            t_roi1: "БЦК клиенттерінің сақталған қаражаты", t_roi2: "False Positives азаюы", t_roi3: "Өңдеу контуры",
+            t_m1: "bcc.kz бағыты", t_m2: "Макс. кідіріс", t_m3: "Экран / Тию", t_m4: "Буфер (Контекстік)",
+            pathNorm: "Қалыпты", pathAnom: "АУЫТҚУ!", touchOk: "Қалыпты (OK)", touchRat: "ЭКРАН ЖАЗУ!",
+            pasteNo: "Жоқ", pasteSafe: "Кірістіру (Қоңыраусыз)", pasteDanger: "КІРІСТІРУ + ҚОҢЫРАУ!",
+            t_chart_title: "Цифрларды басу ырғағы (0–9)", t_chart_sub: "Жасыл: қалыпты | Сары: қоңыраусыз Copy-Paste | Қызыл: айтып тұру",
+            t_graph_title: "Байланыстар графы (GNN + СМП)", t_graph_sub: "Алушы кластерін талдау",
+            t_ai_title: "Explainable AI (SHAP): БЦК Предиктивті скоринг + ҚР ҰБ",
+            waitSub: "bcc.kz клиентінің транзакциясын күту...", statusSub: "Операция мәртебесі: ",
+            t_soc_title: "БЦК қауіпсіздік қызметінің журналы (Live SOC 505/605)",
+            t_th1: "Уақыт", t_th2: "Алушы / Арна", t_th3: "Сома", t_th4: "Қауіп", t_th5: "Басты триггер", t_th6: "Шешім",
+            t_no_logs: "Транзакциялар әлі жоқ",
+            fricTitle: "БЦК клиенті растады ✅", fricDesc: "Қоңырау аяқталды, психологиялық қысым тоқтатылды.",
+            timerPrefix: "Авто-бас тартуға дейін: ",
+            m_lbl_rec: "Алушы:", m_lbl_amt: "Аударым сомасы:", m_lbl_risk: "AI қауіп индексі:",
+            m_tg_hint: "Сұрау сенімді тұлғаға Telegram / SMS (1 немесе 2) арқылы жіберілді",
+            m_fric_text: "Маған банктен, полициядан немесе Ұлттық Банктен қоңырау шалмағанын және аударымды өз еркіммен жасайтынымды растаймын.",
+            modalConfirmFrictionBtn: "Растау және аудару",
+            modalVideoBtn: "🎥 Жақындарыңыз жоқ па? BCC FaceID Бейне-тексеріс",
+            modalCall505Btn: "📞 БЦК ҚҚ қоңырау шалу (505 / 605)",
+            modalCloseBtn: "bcc.kz-ке оралу"
+        }
+    };
+
+    let keyTimes = [];
+    let intervalsMs = [];
+    let maxPauseSec = 0;
+    let backspaceCount = 0;
+    let wasPasted = false;
+    let isFailoverMode = false;
+    let startTime = null;
+    let currentTxId = 0;
+    let currentBalance = 600000;
+    let savedTotal = 0;
+    let isTxPaid = false;
+    let callSeconds = 252;
+    let cooldownSeconds = 899;
+    let cooldownInterval = null;
+    let lastRecipientName = "";
+    let lastAmount = 0;
+    let lastScore = 0;
+
+    function toggleFailoverMode() {
+        isFailoverMode = !isFailoverMode;
+        const btn = document.getElementById('failoverBtn');
+        const modeLbl = document.getElementById('sdkModeLabel');
+        btn.classList.toggle('active', isFailoverMode);
+        if (isFailoverMode) {
+            modeLbl.innerText = 'ON-DEVICE FAIL-OPEN (1ms)';
+            modeLbl.style.color = '#fbbf24';
+            showToast('⚡ ML-сервер недоступен (503): активирован резервный On-Device Edge-контур (1 мс)!');
+        } else {
+            toggleShadowMode();
+        }
+    }
+
+    function simulateIncomingCall() {
+        document.getElementById('phoneFrame').classList.add('ringing');
+        document.getElementById('incomingCallCard').style.display = 'flex';
+    }
+
+    function acceptSimulatedCall() {
+        document.getElementById('phoneFrame').classList.remove('ringing');
+        document.getElementById('incomingCallCard').style.display = 'none';
+        document.getElementById('callToggle').checked = true;
+        toggleCallBanner();
+        refreshGraph();
+        updateCallGuardUI();
+    }
+
+    function declineSimulatedCall() {
+        document.getElementById('phoneFrame').classList.remove('ringing');
+        document.getElementById('incomingCallCard').style.display = 'none';
+    }
+
+    function endActiveCall() {
+        document.getElementById('callToggle').checked = false;
+        toggleCallBanner();
+        refreshGraph();
+        updateCallGuardUI();
+    }
+
+    function updateCallGuardUI() {
+        const isCall = document.getElementById('callToggle').checked;
+        const guardWarn = document.getElementById('callGuardWarn');
+        const fricCheck = document.getElementById('frictionCheckbox');
+        const fricBtn = document.getElementById('modalConfirmFrictionBtn');
+        const videoBtn = document.getElementById('modalVideoBtn');
+
+        if (isCall) {
+            guardWarn.style.display = 'block';
+            if (fricBtn) fricBtn.disabled = true;
+            if (videoBtn) videoBtn.disabled = true;
+        } else {
+            guardWarn.style.display = 'none';
+            if (fricBtn) fricBtn.disabled = !fricCheck.checked;
+            if (videoBtn) videoBtn.disabled = false;
+        }
+    }
+
+    function toggleShadowMode() {
+        if (isFailoverMode) return;
+        const isShadow = document.getElementById('shadowModeToggle').checked;
+        document.getElementById('shadowPill').classList.toggle('active', isShadow);
+        const modeLbl = document.getElementById('sdkModeLabel');
+        const sdkBadge = document.getElementById('sdkStatusBadge');
+        if (isShadow) {
+            modeLbl.innerText = 'SHADOW PILOT (LOG ONLY)';
+            modeLbl.style.color = '#fbbf24';
+            sdkBadge.innerText = '● Shadow Pilot (505)';
+            sdkBadge.style.color = '#d97706';
+        } else {
+            modeLbl.innerText = 'HYBRID CLOUD + EDGE';
+            modeLbl.style.color = '#34d399';
+            sdkBadge.innerText = '● BCC Qorgau SDK (505)';
+            sdkBadge.style.color = '#008a57';
+        }
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('socToast');
+        t.innerText = msg;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 4000);
+    }
+
+    function onPhoneInput() {
+        const val = document.getElementById('phoneInput').value;
+        const badge = document.getElementById('detectedBankBadge');
+        const cleanDigits = val.replace(/\D/g, '');
+
+        if (cleanDigits.includes('7006660000')) {
+            document.getElementById('recipientType').value = 'nbrk_blacklist';
+            badge.innerText = '⛔ СТОП-БАЗА НБРК';
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#dc2626';
+            drawFraudGraph('nbrk_blacklist');
+            return;
+        }
+
+        if (cleanDigits.startsWith('7707') || cleanDigits.startsWith('7747')) {
+            badge.innerText = 'Kaspi / СМП НБРК';
+            badge.style.background = '#fef3c7';
+            badge.style.color = '#b45309';
+        } else if (cleanDigits.startsWith('7701') || cleanDigits.startsWith('7702')) {
+            badge.innerText = 'Halyk / СМП НБРК';
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#007a4d';
+        } else if (cleanDigits.startsWith('7705') || cleanDigits.startsWith('7777')) {
+            badge.innerText = 'Freedom / СМП НБРК';
+            badge.style.background = '#e0f2fe';
+            badge.style.color = '#0369a1';
+        } else {
+            badge.innerText = 'Банк ЦентрКредит';
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#007a4d';
+        }
+    }
+
+    function selectBccTab(tab) {
+        document.getElementById('tab_smp').classList.toggle('active', tab === 'smp');
+        document.getElementById('tab_card').classList.toggle('active', tab === 'card');
+        document.getElementById('tab_biz').classList.toggle('active', tab === 'biz');
+        if (tab === 'biz') {
+            document.getElementById('recipientType').value = 'bcc_business';
+        } else if (document.getElementById('recipientType').value === 'bcc_business') {
+            document.getElementById('recipientType').value = 'known';
+        }
+        onRecipientChange();
+    }
+
+    function setLang(lang) {
+        currentLang = lang;
+        document.getElementById('btn_kk').classList.toggle('active', lang === 'kk');
+        document.getElementById('btn_ru').classList.toggle('active', lang === 'ru');
+        const d = i18n[lang];
+        for (const key in d) {
+            const el = document.getElementById(key);
+            if (el) el.innerText = d[key];
+        }
+        onRecipientChange();
+        resetTelemetry();
+    }
+
+    setInterval(() => {
+        if (document.getElementById('callToggle').checked) {
+            callSeconds++;
+            const m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+            const s = String(callSeconds % 60).padStart(2, '0');
+            document.getElementById('callTimer').innerText = `${m}:${s}`;
+        }
+    }, 1000);
+
+    function toggleCallBanner() {
+        const isCall = document.getElementById('callToggle').checked;
+        document.getElementById('callBanner').style.display = isCall ? 'flex' : 'none';
+        if (wasPasted) updatePasteIndicator();
+    }
+
+    function closeBccModal() {
+        document.getElementById('bccModalBackdrop').style.display = 'none';
+    }
+
+    function refreshGraph() {
+        drawFraudGraph(document.getElementById('recipientType').value);
+    }
+
+    function onRecipientChange() {
+        const type = document.getElementById('recipientType').value;
+        const btn = document.getElementById('submitBtn');
+        const amtInput = document.getElementById('amountInput');
+        const phoneInput = document.getElementById('phoneInput');
+        const badge = document.getElementById('detectedBankBadge');
+        const cardBox = document.getElementById('bccCardBox');
+        const appTitle = document.getElementById('bccAppTitle');
+        const d = i18n[currentLang];
+
+        cardBox.classList.remove('biz-mode');
+        appTitle.innerHTML = '<span class="bcc-dot"></span> bcc.kz';
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#007a4d';
+
+        if (type === 'known') {
+            phoneInput.value = currentLang === 'kk' ? '+7 701 555-33-11 (Анашым)' : '+7 701 555-33-11 (Мама)';
+            badge.innerText = 'Внутри БЦК (Whitelist)';
+            btn.innerText = d.submitBtn;
+        } else if (type === 'new') {
+            phoneInput.value = '+7 707 999-11-22';
+            badge.innerText = 'Kaspi / СМП НБРК';
+            badge.style.background = '#fef3c7';
+            badge.style.color = '#b45309';
+            btn.innerText = d.submitBtn;
+        } else if (type === 'fake_invoice') {
+            phoneInput.value = 'QR: ИП «KazPost-Service»';
+            badge.innerText = 'BCC Pay / QR';
+            amtInput.value = 185000;
+            btn.innerText = d.submitInv;
+        } else if (type === 'nbrk_blacklist') {
+            phoneInput.value = '+7 700 666-00-00';
+            badge.innerText = '⛔ СТОП-БАЗА НБРК';
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#dc2626';
+            btn.innerText = d.submitBtn;
+        } else if (type === 'bcc_business') {
+            document.getElementById('tab_smp').classList.remove('active');
+            document.getElementById('tab_card').classList.remove('active');
+            document.getElementById('tab_biz').classList.add('active');
+            currentBalance = 2500000;
+            document.getElementById('balanceDisplay').innerText = '2 500 000 ₸';
+            document.getElementById('t_bal_lbl').innerText = currentLang === 'kk' ? 'Шот KZ88... (BCC Business)' : 'Счет KZ88... (BCC Business)';
+            cardBox.classList.add('biz-mode');
+            appTitle.innerHTML = '<span class="bcc-dot" style="background:#0ea5e9;"></span> bcc business';
+            phoneInput.value = 'БИН 240940011223 • ТОО «Alfa-Stroy»';
+            badge.innerText = 'Платежное поручение';
+            amtInput.value = 1450000;
+            btn.innerText = d.submitBiz;
+        }
+
+        if (type !== 'bcc_business') {
+            document.getElementById('tab_biz').classList.remove('active');
+            document.getElementById('tab_smp').classList.add('active');
+            if (currentBalance === 2500000) {
+                currentBalance = 600000;
+                document.getElementById('balanceDisplay').innerText = '600 000 ₸';
+            }
+            document.getElementById('t_bal_lbl').innerText = d.t_bal_lbl;
+        }
+        drawFraudGraph(type);
+    }
+
+    function drawPulseChart() {
+        const canvas = document.getElementById('pulseCanvas');
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        ctx.strokeStyle = '#1f363b';
+        ctx.lineWidth = 1;
+        for (let y = 20; y < h; y += 20) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+
+        if (intervalsMs.length === 0) return;
+
+        const isRat = document.getElementById('ratToggle').checked;
+        const isCall = document.getElementById('callToggle').checked;
+        const barWidth = Math.min(40, (w - 30) / intervalsMs.length - 5);
+        intervalsMs.forEach((ms, idx) => {
+            const clampedMs = Math.min(ms, 4500);
+            const barHeight = Math.max(10, (clampedMs / 4500) * (h - 18));
+            const x = 15 + idx * (barWidth + 6);
+            const y = h - barHeight - 6;
+
+            let barCol = '#00a86b';
+            if (isRat || (wasPasted && isCall) || ms > 2500) barCol = '#ef4444';
+            else if (wasPasted || ms > 1000) barCol = '#f59e0b';
+
+            ctx.fillStyle = barCol;
+            ctx.beginPath();
+            ctx.roundRect(x, y, barWidth, barHeight, 4);
+            ctx.fill();
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '9.5px sans-serif';
+            ctx.fillText(isRat ? 'SHARE' : (wasPasted ? 'PASTE' : (ms / 1000).toFixed(1) + 's'), x, y - 3);
+        });
+    }
+
+    function drawFraudGraph(rType) {
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const isKk = currentLang === 'kk';
+        const isCall = document.getElementById('callToggle').checked;
+        const isMule = document.getElementById('muleToggle').checked;
+        const isRat = document.getElementById('ratToggle').checked;
+
+        let nodes = [];
+        let links = [];
+
+        if (rType === 'known') {
+            nodes = [
+                { x: 75, y: 40, label: '#картакарта', color: '#00a86b' },
+                { x: 255, y: 40, label: isKk ? 'Анашым (Whitelist)' : 'Мама (Whitelist)', color: '#34d399' }
+            ];
+            links = [[0, 1, '#00a86b']];
+        } else if (rType === 'new') {
+            if (isRat || isMule) {
+                nodes = [
+                    { x: 50, y: 40, label: '#картакарта', color: '#00a86b' },
+                    { x: 165, y: 40, label: isKk ? 'Дроп-торап' : 'Транзитный дроп', color: '#8b5cf6' },
+                    { x: 285, y: 20, label: isRat ? 'Screen Share' : 'Смена SIM (IMSI)', color: '#ef4444' },
+                    { x: 285, y: 60, label: isKk ? 'Шығару < 2 мин' : 'Вывод < 2 мин', color: '#f59e0b' }
+                ];
+                links = [[0, 1, '#8b5cf6'], [1, 2, '#ef4444'], [1, 3, '#f59e0b']];
+            } else if (isCall) {
+                nodes = [
+                    { x: 50, y: 40, label: '#картакарта', color: '#00a86b' },
+                    { x: 165, y: 40, label: isKk ? 'Жаңа шот (СМП)' : 'Новый счет (СМП)', color: '#ef4444' },
+                    { x: 285, y: 20, label: isKk ? 'Ортақ байланыс жоқ' : 'Нет общих связей', color: '#f59e0b' },
+                    { x: 285, y: 60, label: isKk ? 'Белсенді қоңырау' : 'CallKit + СМП', color: '#ef4444' }
+                ];
+                links = [[0, 1, '#ef4444'], [1, 2, '#f59e0b'], [1, 3, '#ef4444']];
+            } else {
+                nodes = [
+                    { x: 55, y: 40, label: '#картакарта', color: '#00a86b' },
+                    { x: 170, y: 40, label: isKk ? 'Жаңа алушы' : 'Новый получатель', color: '#f59e0b' },
+                    { x: 285, y: 40, label: isKk ? 'Таза кластер (0)' : 'Чистый кластер (0)', color: '#34d399' }
+                ];
+                links = [[0, 1, '#f59e0b'], [1, 2, '#34d399']];
+            }
+        } else if (rType === 'fake_invoice') {
+            nodes = [
+                { x: 50, y: 40, label: 'BCC Pay / QR', color: '#00a86b' },
+                { x: 170, y: 40, label: isKk ? 'ЖК (3 күн)' : 'ИП (3 дня)', color: '#f59e0b' },
+                { x: 285, y: 20, label: isKk ? 'MCC сәйкес емес' : 'MCC не совпал', color: '#ef4444' },
+                { x: 285, y: 60, label: isKk ? 'Шағымдар: 6' : 'Жалобы: 6 шт', color: '#ef4444' }
+            ];
+            links = [[0, 1, '#f59e0b'], [1, 2, '#ef4444'], [1, 3, '#ef4444']];
+        } else if (rType === 'nbrk_blacklist') {
+            nodes = [
+                { x: 50, y: 40, label: '#картакарта', color: '#00a86b' },
+                { x: 165, y: 40, label: isKk ? 'Дроп (ҚР ҰБ)' : 'Дроп (База НБРК)', color: '#dc2626' },
+                { x: 285, y: 20, label: isKk ? '14 құрбан / 1сағ' : '14 жертв / 1ч', color: '#ef4444' },
+                { x: 285, y: 60, label: isKk ? 'Крипто-обнал' : 'Крипто-обнал', color: '#f59e0b' }
+            ];
+            links = [[0, 1, '#dc2626'], [1, 2, '#ef4444'], [1, 3, '#f59e0b']];
+        } else if (rType === 'bcc_business') {
+            nodes = [
+                { x: 50, y: 40, label: 'BCC Business', color: '#0ea5e9' },
+                { x: 170, y: 40, label: 'ТОО «Alfa-Stroy»', color: '#f59e0b' },
+                { x: 285, y: 20, label: isKk ? 'Жаңа контрагент' : 'Новый контрагент', color: '#ef4444' },
+                { x: 285, y: 60, label: isKk ? '2-ші қол күтуде' : 'Ждет 2-ю подпись', color: '#34d399' }
+            ];
+            links = [[0, 1, '#f59e0b'], [1, 2, '#ef4444'], [1, 3, '#34d399']];
+        }
+
+        ctx.lineWidth = 2;
+        links.forEach(([fromIdx, toIdx, strokeColor]) => {
+            ctx.strokeStyle = strokeColor;
+            ctx.beginPath();
+            ctx.moveTo(nodes[fromIdx].x, nodes[fromIdx].y);
+            ctx.lineTo(nodes[toIdx].x, nodes[toIdx].y);
+            ctx.stroke();
+        });
+
+        nodes.forEach(n => {
+            ctx.fillStyle = n.color;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 7.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '9.5px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(n.label, n.x, n.y + 17);
+        });
+    }
+
+    function resetTelemetry() {
+        const d = i18n[currentLang];
+        if (cooldownInterval) clearInterval(cooldownInterval);
+        closeBccModal();
+        declineSimulatedCall();
+        keyTimes = [];
+        intervalsMs = [];
+        maxPauseSec = 0;
+        backspaceCount = 0;
+        wasPasted = false;
+        startTime = null;
+        currentTxId = 0;
+        isTxPaid = false;
+        currentBalance = 600000;
+        document.getElementById('phoneFrame').className = 'phone';
+        document.getElementById('bccCardBox').className = 'balance-card';
+        document.getElementById('bccAppTitle').innerHTML = '<span class="bcc-dot"></span> bcc.kz';
+        document.getElementById('tab_smp').classList.add('active');
+        document.getElementById('tab_card').classList.remove('active');
+        document.getElementById('tab_biz').classList.remove('active');
+        document.getElementById('t_bal_lbl').innerText = d.t_bal_lbl;
+        document.getElementById('callBanner').style.display = 'none';
+        document.getElementById('cameraBox').style.display = 'none';
+        document.getElementById('balanceDisplay').innerText = '600 000 ₸';
+        document.getElementById('amountInput').value = '';
+        document.getElementById('recipientType').value = 'known';
+        document.getElementById('phoneInput').value = currentLang === 'kk' ? '+7 701 555-33-11 (Анашым)' : '+7 701 555-33-11 (Мама)';
+        document.getElementById('detectedBankBadge').innerText = 'Внутри БЦК (Whitelist)';
+        document.getElementById('detectedBankBadge').style.background = '#dcfce7';
+        document.getElementById('detectedBankBadge').style.color = '#007a4d';
+        document.getElementById('submitBtn').innerText = d.submitBtn;
+        document.getElementById('clickstreamToggle').checked = false;
+        document.getElementById('callToggle').checked = false;
+        document.getElementById('loanToggle').checked = false;
+        document.getElementById('ratToggle').checked = false;
+        document.getElementById('muleToggle').checked = false;
+        document.getElementById('uiPath').innerText = d.pathNorm;
+        document.getElementById('uiPath').style.color = '#34d399';
+        document.getElementById('uiPause').innerText = '0.0 сек';
+        document.getElementById('uiTouch').innerText = d.touchOk;
+        document.getElementById('uiTouch').style.color = '#34d399';
+        document.getElementById('uiPaste').innerText = d.pasteNo;
+        document.getElementById('uiPaste').style.color = '#34d399';
+        document.getElementById('verdictSubtitle').innerText = d.waitSub;
+        drawPulseChart();
+        drawFraudGraph('known');
+    }
+
+    function updatePasteIndicator() {
+        const d = i18n[currentLang];
+        const isCall = document.getElementById('callToggle').checked;
+        if (isCall) {
+            document.getElementById('uiPaste').innerText = d.pasteDanger;
+            document.getElementById('uiPaste').style.color = '#ef4444';
+        } else {
+            document.getElementById('uiPaste').innerText = d.pasteSafe;
+            document.getElementById('uiPaste').style.color = '#f59e0b';
+        }
+        drawPulseChart();
+    }
+
+    function trackPaste() {
+        wasPasted = true;
+        intervalsMs = [2200];
+        updatePasteIndicator();
+    }
+
+    function trackKey(e) {
+        if (e.ctrlKey || e.metaKey) return;
+
+        if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
+            if (e.key === 'Backspace') backspaceCount++;
+            return;
+        }
+
+        if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+            return;
+        }
+
+        const now = performance.now();
+        if (!startTime) startTime = now;
+
+        if (keyTimes.length > 0) {
+            const diffMs = now - keyTimes[keyTimes.length - 1];
+            const diffSec = diffMs / 1000;
+
+            if (diffSec > 12.0) {
+                keyTimes = [now];
+                intervalsMs = [];
+                maxPauseSec = 0;
+                document.getElementById('uiPause').innerText = '0.0 сек (AFK)';
+                drawPulseChart();
+                return;
+            }
+
+            intervalsMs.push(diffMs);
+            if (diffSec > maxPauseSec) {
+                maxPauseSec = diffSec;
+                document.getElementById('uiPause').innerText = maxPauseSec.toFixed(1) + ' сек';
+            }
+            drawPulseChart();
+        }
+        keyTimes.push(now);
+    }
+
+    function applyPreset(type) {
+        const d = i18n[currentLang];
+        const keepBaseline = document.getElementById('baselineToggle').checked;
+        resetTelemetry();
+        document.getElementById('baselineToggle').checked = keepBaseline;
+
+        if (type === 'safe') {
+            document.getElementById('recipientType').value = 'known';
+            onRecipientChange();
+            document.getElementById('amountInput').value = 350000;
+            intervalsMs = [140, 160, 130, 150];
+            maxPauseSec = 0.2;
+        } else if (type === 'scam') {
+            document.getElementById('recipientType').value = 'new';
+            onRecipientChange();
+            document.getElementById('amountInput').value = 550000;
+            document.getElementById('clickstreamToggle').checked = true;
+            document.getElementById('callToggle').checked = true;
+            toggleCallBanner();
+            document.getElementById('loanToggle').checked = true;
+            document.getElementById('uiPath').innerText = d.pathAnom;
+            document.getElementById('uiPath').style.color = '#ef4444';
+            intervalsMs = [320, 4100, 480, 3600, 290];
+            maxPauseSec = 4.1;
+            backspaceCount = 4;
+        } else if (type === 'rat') {
+            document.getElementById('recipientType').value = 'new';
+            onRecipientChange();
+            document.getElementById('amountInput').value = 580000;
+            document.getElementById('ratToggle').checked = true;
+            document.getElementById('muleToggle').checked = true;
+            document.getElementById('uiTouch').innerText = d.touchRat;
+            document.getElementById('uiTouch').style.color = '#ef4444';
+            intervalsMs = [50, 50, 50, 50];
+            maxPauseSec = 0.05;
+        } else if (type === 'invoice') {
+            document.getElementById('recipientType').value = 'fake_invoice';
+            onRecipientChange();
+            document.getElementById('callToggle').checked = true;
+            toggleCallBanner();
+            intervalsMs = [200];
+        } else if (type === 'nbrk') {
+            document.getElementById('recipientType').value = 'nbrk_blacklist';
+            onRecipientChange();
+            document.getElementById('amountInput').value = 120000;
+            intervalsMs = [150, 150];
+            maxPauseSec = 0.15;
+        } else if (type === 'biz') {
+            document.getElementById('recipientType').value = 'bcc_business';
+            onRecipientChange();
+            document.getElementById('callToggle').checked = true;
+            toggleCallBanner();
+            intervalsMs = [400, 3800, 350];
+            maxPauseSec = 3.8;
+        }
+
+        document.getElementById('uiPause').innerText = maxPauseSec.toFixed(1) + ' сек';
+        drawPulseChart();
+        drawFraudGraph(document.getElementById('recipientType').value);
+        submitTransfer();
+    }
+
+    function renderSocLogs(logs) {
+        if (!logs || logs.length === 0) return;
+        const tbody = document.getElementById('socLogBody');
+        tbody.innerHTML = '';
+        logs.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.time}</td>
+                <td><b>${row.tx_id}</b></td>
+                <td>${row.recipient}</td>
+                <td>${row.amount}</td>
+                <td><b>${row.risk}/100</b></td>
+                <td>${row.vector}</td>
+                <td><span class="badge-st st-${row.status}">${row.status}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function startCooldownTimer() {
+        if (cooldownInterval) clearInterval(cooldownInterval);
+        cooldownSeconds = 899;
+        const d = i18n[currentLang];
+        cooldownInterval = setInterval(() => {
+            const el = document.getElementById('cdTimerSpan');
+            if (!el) return;
+            cooldownSeconds = Math.max(0, cooldownSeconds - 1);
+            const m = String(Math.floor(cooldownSeconds / 60)).padStart(2, '0');
+            const s = String(cooldownSeconds % 60).padStart(2, '0');
+            el.innerText = `${d.timerPrefix}${m}:${s}`;
+        }, 1000);
+    }
+
+    function updateVerdictUI(status, title, desc, score) {
+        const d = i18n[currentLang];
+        const isShadow = document.getElementById('shadowModeToggle').checked;
+        const phoneFrame = document.getElementById('phoneFrame');
+        const backdrop = document.getElementById('bccModalBackdrop');
+        const iconEl = document.getElementById('modalIcon');
+        const titleEl = document.getElementById('modalTitle');
+        const descEl = document.getElementById('modalDesc');
+        const timerBox = document.getElementById('modalTimerBox');
+        const fricLabel = document.getElementById('frictionCheckLabel');
+        const fricCheck = document.getElementById('frictionCheckbox');
+        const fricBtn = document.getElementById('modalConfirmFrictionBtn');
+        const videoBtn = document.getElementById('modalVideoBtn');
+        const call505Btn = document.getElementById('modalCall505Btn');
+
+        if (score !== null) lastScore = score;
+
+        document.getElementById('modalRecVal').innerText = lastRecipientName;
+        document.getElementById('modalAmtVal').innerText = lastAmount.toLocaleString('ru-RU') + ' ₸';
+        document.getElementById('modalRiskVal').innerText = `${lastScore} / 100`;
+
+        timerBox.style.display = 'none';
+        timerBox.classList.remove('danger');
+        fricLabel.style.display = 'none';
+        fricCheck.checked = false;
+        fricBtn.style.display = 'none';
+        fricBtn.disabled = true;
+        videoBtn.style.display = 'none';
+        call505Btn.style.display = 'none';
+        phoneFrame.classList.remove('danger-glow', 'safe-glow');
+
+        let color = '#00a86b';
+
+        if (isShadow && status !== 'APPROVED') {
+            iconEl.className = 'modal-icon-circle icon-APPROVED';
+            iconEl.innerText = '👁️';
+            titleEl.innerText = currentLang === 'kk' ? 'Shadow Mode: Аударым өтті (Лог SOC)' : 'Shadow Mode: Перевод проведен (Записано в SOC)';
+            titleEl.style.color = '#b45309';
+            descEl.innerText = currentLang === 'kk'
+                ? `Теневой пилот: қауіп деңгейі ${lastScore}/100 тіркелді, бірақ клиентке кедергі жасалмады.`
+                : `Теневой пилот БЦК: риск ${lastScore}/100 зафиксирован в SOC-журнале без вмешательства в UX клиента.`;
+            phoneFrame.classList.add('safe-glow');
+            backdrop.style.display = 'flex';
+            if (score !== null) {
+                const badge = document.getElementById('riskScoreBadge');
+                const bar = document.getElementById('riskProgress');
+                badge.innerText = `${score} / 100`;
+                bar.style.width = `${score}%`;
+                badge.style.color = '#f59e0b';
+                bar.style.background = '#f59e0b';
+            }
+            return;
+        }
+
+        titleEl.innerText = title;
+        descEl.innerText = desc;
+        iconEl.className = 'modal-icon-circle icon-' + status;
+
+        const isHardNbr = title.includes('НБРК') || title.includes('ҚР ҰБ');
+
+        if (status === 'APPROVED') {
+            iconEl.innerText = '✅';
+            titleEl.style.color = '#007a4d';
+            phoneFrame.classList.add('safe-glow');
+            if (cooldownInterval) clearInterval(cooldownInterval);
+            if (!isTxPaid && lastAmount > 0 && lastAmount <= currentBalance) {
+                currentBalance -= lastAmount;
+                isTxPaid = true;
+                document.getElementById('balanceDisplay').innerText = currentBalance.toLocaleString('ru-RU') + ' ₸';
+            }
+        } else if (status === 'FRICTION') {
+            iconEl.innerText = '⚠️';
+            titleEl.style.color = '#b45309';
+            color = '#f59e0b';
+            phoneFrame.classList.add('danger-glow');
+            fricLabel.style.display = 'flex';
+            fricBtn.style.display = 'block';
+        } else if (status === 'COOLDOWN') {
+            iconEl.innerText = '⏳';
+            titleEl.style.color = '#b45309';
+            color = '#f59e0b';
+            phoneFrame.classList.add('danger-glow');
+            timerBox.style.display = 'block';
+            videoBtn.style.display = 'block';
+            savedTotal += lastAmount;
+            document.getElementById('savedMoneyVal').innerText = savedTotal.toLocaleString('ru-RU') + ' ₸';
+            startCooldownTimer();
+        } else if (status === 'BLOCKED') {
+            iconEl.innerText = '🛑';
+            titleEl.style.color = '#dc2626';
+            color = '#ef4444';
+            phoneFrame.classList.add('danger-glow');
+            call505Btn.style.display = 'block';
+            savedTotal += lastAmount;
+            document.getElementById('savedMoneyVal').innerText = savedTotal.toLocaleString('ru-RU') + ' ₸';
+            if (!isHardNbr) {
+                timerBox.style.display = 'block';
+                timerBox.classList.add('danger');
+                videoBtn.style.display = 'block';
+                startCooldownTimer();
+            }
+        }
+
+        updateCallGuardUI();
+        backdrop.style.display = 'flex';
+
+        if (score !== null) {
+            const badge = document.getElementById('riskScoreBadge');
+            const bar = document.getElementById('riskProgress');
+            badge.innerText = `${score} / 100`;
+            bar.style.width = `${score}%`;
+            badge.style.color = color;
+            bar.style.background = color;
+        }
+        document.getElementById('verdictSubtitle').innerText = `${d.statusSub}${title}`;
+    }
+
+    function confirmFriction() {
+        const d = i18n[currentLang];
+        updateVerdictUI('APPROVED', d.fricTitle, d.fricDesc, 20);
+    }
+
+    async function triggerVideoVerify() {
+        const d = i18n[currentLang];
+        const btn = document.getElementById('modalVideoBtn');
+        const camBox = document.getElementById('cameraBox');
+        const videoEl = document.getElementById('webcamVideo');
+        const statusTxt = document.getElementById('camStatusText');
+
+        camBox.style.display = 'block';
+        btn.style.display = 'none';
+        statusTxt.innerText = currentLang === 'kk' ? "BCC FaceID: Бет-әлпет пен қысымды тексеру..." : "BCC FaceID: Проверка лица и отсутствия давления...";
+
+        let stream = null;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoEl.srcObject = stream;
+        } catch (e) {}
+
+        setTimeout(async () => {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            camBox.style.display = 'none';
+            const res = await fetch('/api/video-verify', { method: 'POST' });
+            const data = await res.json();
+            btn.innerText = d.modalVideoBtn;
+            updateVerdictUI(data.state.status, data.state.action_title, data.state.action_desc, 15);
+            renderSocLogs(data.logs);
+        }, 2800);
+    }
+
+    async function submitTransfer() {
+        const d = i18n[currentLang];
+        const rawVal = document.getElementById('amountInput').value.replace(/\D/g, '');
+        const amount = parseFloat(rawVal) || 0;
+        if (amount <= 0) { alert(currentLang === 'kk' ? "Соманы цифрмен енгізіңіз!" : "Введите сумму цифрами!"); return; }
+        if (amount > currentBalance) { alert(currentLang === 'kk' ? "Теңгерімде қаражат жеткіліксіз!" : "Недостаточно средств на балансе!"); return; }
+
+        isTxPaid = false;
+        const rType = document.getElementById('recipientType').value;
+        const isRat = document.getElementById('ratToggle').checked;
+        const isPath = document.getElementById('clickstreamToggle').checked;
+        const isCall = document.getElementById('callToggle').checked;
+
+        drawFraudGraph(rType);
+
+        if (isPath) {
+            document.getElementById('uiPath').innerText = d.pathAnom;
+            document.getElementById('uiPath').style.color = '#ef4444';
+        }
+        if (isRat) {
+            document.getElementById('uiTouch').innerText = d.touchRat;
+            document.getElementById('uiTouch').style.color = '#ef4444';
+        }
+
+        const customRecipient = document.getElementById('phoneInput').value.trim();
+        const bankLabel = document.getElementById('detectedBankBadge').innerText;
+        const recipientName = customRecipient ? `${customRecipient} (${bankLabel})` : "Получатель СМП";
+
+        lastRecipientName = recipientName;
+        lastAmount = amount;
+
+        const contextualPaste = wasPasted && (isCall || isPath);
+
+        if (isFailoverMode) {
+            document.getElementById('latencyBadge').innerText = `⚡ Edge Fail-Open: 1 ms`;
+            const edgeRisk = (rType === 'nbrk_blacklist' || isRat) ? 95 : (isCall && isPath ? 82 : 10);
+            const edgeStatus = edgeRisk >= 75 ? 'BLOCKED' : 'APPROVED';
+            updateVerdictUI(
+                edgeStatus,
+                edgeStatus === 'BLOCKED' ? 'On-Device Резерв: Угроза заблокирована' : 'On-Device Резерв: Перевод разрешен (1 мс)',
+                'Облачный ML-сервер БЦК недоступен. Сработал локальный резервный контур в мобильном SDK без потери платежей.',
+                edgeRisk
+            );
+            return;
+        }
+
+        const payload = {
+            lang: currentLang,
+            custom_chat_id: document.getElementById('tgChatIdInput').value.trim(),
+            recipient_type: rType,
+            recipient: recipientName,
+            amount: amount,
+            balance: currentBalance,
+            clickstream_anomaly: isPath,
+            active_unknown_call: isCall,
+            recent_loan: document.getElementById('loanToggle').checked,
+            remote_access_rat: isRat,
+            transit_mule_inflow: document.getElementById('muleToggle').checked,
+            sim_swapped: document.getElementById('muleToggle').checked,
+            was_pasted: contextualPaste,
+            has_baseline: document.getElementById('baselineToggle').checked,
+            avg_key_delay_ms: 220,
+            max_pause_sec: maxPauseSec,
+            backspace_count: backspaceCount,
+            total_input_time_sec: startTime ? (performance.now() - startTime) / 1000 : 2.0
+        };
+
+        const t0 = performance.now();
+        const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        const latencyMs = Math.max(4, Math.round(performance.now() - t0));
+        document.getElementById('latencyBadge').innerText = `⚡ Latency: ${latencyMs} ms`;
+
+        currentTxId = data.tx_id;
+
+        if (wasPasted && !contextualPaste) {
+            data.reasons.unshift("ℹ️ Контекстный Copy-Paste: вставка суммы без звонка и аномалий — штраф не начислен.");
+        }
+
+        updateVerdictUI(data.status, data.action_title, data.action_desc, data.risk_score);
+        renderSocLogs(data.logs);
+
+        let color = data.risk_score >= 75 ? '#ef4444' : (data.risk_score >= 40 ? '#f59e0b' : '#00a86b');
+        const list = document.getElementById('reasonsList');
+        list.innerHTML = '';
+        data.reasons.forEach(r => {
+            const match = r.match(/\+(\d+)/);
+            const weight = match ? Math.min(100, parseInt(match[1], 10) * 1.5) : (data.risk_score >= 40 ? 45 : 15);
+            const barColor = match ? '#ef4444' : '#00a86b';
+
+            const li = document.createElement('li');
+            li.style.borderLeftColor = color;
+            li.innerHTML = `
+                <span>${r}</span>
+                <div class="shap-bar-wrap" title="SHAP Feature Weight">
+                    <div class="shap-bar-fill" style="width:${weight}%; background:${barColor};"></div>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    setInterval(async () => {
+        try {
+            const res = await fetch('/api/tx-status');
+            const data = await res.json();
+            if (data.active_users > 0) {
+                document.getElementById('activeTgBadge').innerText = `● TG Подключено: ${data.active_users} чел.`;
+            }
+            const st = data.state;
+            if (currentTxId && st.id === currentTxId && (st.action_title.includes('доверенным лицом') || st.action_title.includes('Сенімді тұлға') || st.action_title.includes('БЦК'))) {
+                if (st.learned_baseline) {
+                    document.getElementById('baselineToggle').checked = true;
+                }
+                if (document.getElementById('bccModalBackdrop').style.display === 'flex' && document.getElementById('modalTitle').innerText !== st.action_title) {
+                    showToast(currentLang === 'kk'
+                        ? `📲 Telegram Webhook: #${currentTxId} операциясына жауап келді!`
+                        : `📲 Telegram Webhook: Получен ответ по операции #${currentTxId}!`);
+                }
+                updateVerdictUI(st.status, st.action_title, st.action_desc, null);
+                renderSocLogs(data.logs);
+            }
+        } catch (e) {}
+    }, 1500);
+
+    drawPulseChart();
+    drawFraudGraph('known');
+</script>
+
+</body>
+</html>
