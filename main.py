@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any
 import numpy as np
 import requests
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
@@ -30,8 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Токен Telegram-бота берется из Environment Variables (Render / Railway) или из строки ниже
-BOT_TOKEN: str = os.getenv("BOT_TOKEN", "ВАШ_ТОКЕН_БОТА")
+# Токен Telegram-бота безопасно считывается только из переменных окружения хостинга
+BOT_TOKEN: str = os.getenv("BOT_TOKEN", "")
 DEFAULT_CHAT_ID: str = os.getenv("CHAT_ID", "")
 
 # Реестр всех пользователей, которые нажали /start в Telegram-боте
@@ -183,7 +183,7 @@ class TransactionTelemetry(BaseModel):
 # 6. TELEGRAM BOT (МНОГОПОЛЬЗОВАТЕЛЬСКИЙ POLLING + INLINE КНОПКИ + КОДЫ 1/2)
 # ==============================================================================
 def tg_send(chat_id: str, text: str, reply_markup: Optional[dict] = None) -> None:
-    if not BOT_TOKEN or "ВАШ_ТОКЕН" in BOT_TOKEN or not chat_id:
+    if not BOT_TOKEN or not chat_id:
         return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload: Dict[str, Any] = {
@@ -229,7 +229,7 @@ def telegram_polling_worker() -> None:
     global last_active_chat
     offset = 0
     while True:
-        if not BOT_TOKEN or "ВАШ_ТОКЕН" in BOT_TOKEN:
+        if not BOT_TOKEN:
             time.sleep(5)
             continue
         try:
